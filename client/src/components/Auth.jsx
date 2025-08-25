@@ -20,37 +20,53 @@ const Auth = () => {
 
         const [isSignup, setIsSignup] = useState(true)
 
+        const [error, setError] = useState('');
+
         const handleChange = (event) => {
                 setForm({ ...form, [event.target.name]: event.target.value });
                 // console.log(form);
         }
         const handleSubmit = async (event) => {
                 event.preventDefault();
+                setError('');
                 const { fullName, username, password, phoneNumber, avatarURL } = form;
                 const URL = 'https://collaborate-xmuz.onrender.com/auth';
-                const { data: { token, userId, hashedPassword } } = await axios.post(`${URL}/${isSignup ? 'signup' : 'login'}`, {
-                        username,
-                        password,
-                        fullName,
-                        phoneNumber,
-                        avatarURL
-                });
-                cookies.set('token', token);
-                cookies.set('username', username);
-                cookies.set('fullName', fullName);
-                cookies.set('userId', userId);
+                try {
+                        const { data: { token, userId, hashedPassword } } = await axios.post(`${URL}/${isSignup ? 'signup' : 'login'}`, {
+                                username,
+                                password,
+                                fullName,
+                                phoneNumber,
+                                avatarURL
+                        });
+                        cookies.set('token', token);
+                        cookies.set('username', username);
+                        cookies.set('fullName', fullName);
+                        cookies.set('userId', userId);
 
-                if (isSignup) {
-                        cookies.set('phoneNumber', phoneNumber);
-                        cookies.set('avatarURL', avatarURL);
-                        cookies.set('hashedPassword', hashedPassword);
+                        if (isSignup) {
+                                cookies.set('phoneNumber', phoneNumber);
+                                cookies.set('avatarURL', avatarURL);
+                                cookies.set('hashedPassword', hashedPassword);
+                        }
+
+                        window.location.reload();
+                } catch (err) {
+                        if (err.response) {
+                                // Backend error message
+                                setError(err.response.data.message || 'Invalid credentials. Please try again.');
+                        } else {
+                                // Network or other errors
+                                setError('An error occurred. Please check your network and try again.');
+                        }
+                        console.error(err);
                 }
 
-                window.location.reload();
         }
 
         const switchMode = () => {
                 setIsSignup((prevIsSignup) => !prevIsSignup);
+                setError('');
 
         }
 
@@ -59,6 +75,8 @@ const Auth = () => {
                         <div className='auth__form-container_fields'>
                                 <div className='auth__form-container_fields-content'>
                                         <p>{isSignup ? 'Sign Up' : 'Sign In'}</p>
+
+                                        {error && <p className="auth__form-error">{error}</p>}
                                         <form onSubmit={handleSubmit}>
                                                 {isSignup && (
                                                         <div className='auth__form-container_fields-content_input'>
